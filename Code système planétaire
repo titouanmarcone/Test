@@ -1,0 +1,127 @@
+import pygame as py
+import numpy as np
+
+py.init()
+
+hauteur = 500
+largeur = 500
+scale = 1e9
+
+blanc = (255, 255, 255)
+noir = (0, 0, 0)
+bleu = (0, 0, 255)
+jaune = (255, 255, 0)
+rouge = (255, 0, 0)
+
+screen = py.display.set_mode((largeur, hauteur))
+py.display.set_caption("simulation système")
+
+G = 6.67e-11
+Ms = 2e30
+MT = 6e24
+Mm = 6e23
+d_TS = 1.5e11
+d_mS = 2.2e11
+d_Tm = 5e10
+
+xS0, yS0 = 0, 0
+
+xT0, yT0 = d_TS, 0
+vxT0, vyT0 = 0, 29783
+
+xm0, ym0 = d_Tm/2, d_Tm/2
+vxm0, vym0 = 30000, 72000
+
+
+
+
+
+dt = 60 * 60 * 7
+t_max = 10 * 365 * 24 * 60 * 60  
+n_steps = int(t_max / dt)
+
+xT, yT = xT0, yT0
+xm, ym = xm0, ym0
+
+vxT, vyT = vxT0, vyT0
+vxm, vym = vxm0, vym0
+
+Ox = largeur / 2
+Oy = hauteur / 2
+
+OT = []
+Om = []
+
+for i in range(n_steps):
+    #info ST
+    dx_ST, dy_ST = (xT - xS0), (yT - yS0)
+    r_ST = np.sqrt(dx_ST**2 + dy_ST**2)
+    phi_ST = np.arctan2(dy_ST, dx_ST)
+
+    #info Sm
+    dx_Sm, dy_Sm = (xm - xS0), (ym - yS0)
+    r_Sm = np.sqrt(dx_Sm**2 + dy_Sm**2)
+    phi_Sm = np.arctan2(dy_Sm, dx_Sm)
+
+    #info mT/Tm
+    dx_mT, dy_mT = (xT - xm), (yT - ym)
+    r_mT = np.sqrt(dx_mT**2 + dy_mT**2)
+    phi_mT = np.arctan2(dy_mT, dx_mT)
+    phi_Tm = phi_mT + np.pi
+
+    #equation mouvement Terre
+    axT = (-G * Ms / r_ST**2) * np.cos(phi_ST) + (-G * Mm / r_mT**2) * np.cos(phi_Tm)
+    ayT = (-G * Ms / r_ST**2) * np.sin(phi_ST) + (-G * Mm / r_mT**2) * np.sin(phi_Tm)
+
+    vxT += axT * dt
+    vyT += ayT * dt
+
+    xT += vxT * dt
+    yT += vyT * dt
+
+    #equation mouvement Mars
+    axm = (-G * Ms / r_Sm**2) * np.cos(phi_Sm) + (-G * MT / r_mT**2) * np.cos(phi_mT)
+    aym = (-G * Ms / r_Sm**2) * np.sin(phi_Sm) + (-G * Mm / r_mT**2) * np.sin(phi_mT)
+
+    vxm += axm * dt
+    vym += aym * dt
+
+    xm += vxm * dt
+    ym += vym * dt
+    
+    
+
+    OT_e = (Ox + xT / scale, Oy - yT / scale)
+    Om_e = (Ox + xm / scale, Oy - ym / scale)
+    
+    OT.append(OT_e)
+    Om.append(Om_e)
+
+
+current_frame = 0
+
+running = True
+clock = py.time.Clock()
+
+while running:
+    for event in py.event.get():
+        if event.type == py.QUIT:
+            running = False
+
+    screen.fill(blanc)
+    # Dessin Soleil
+    py.draw.circle(screen, jaune, (int(Ox), int(Oy)), 10)
+    # Dessin Terre
+    if 0 <= current_frame < len(OT):
+        py.draw.circle(screen, bleu, (int(OT[current_frame][0]),
+int(OT[current_frame][1])), 5)
+    #dessinMars
+    if 0 <= current_frame < len(Om) :
+        py.draw.circle(screen, rouge, (int(Om[current_frame][0]),
+int(Om[current_frame][1])), 4)
+    py.display.flip()
+
+    current_frame = (current_frame + 1) % len(OT)
+    clock.tick(60)  #FPS
+
+py.quit()
