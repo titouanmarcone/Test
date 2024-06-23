@@ -1,0 +1,296 @@
+import pygame as py
+import numpy as np
+
+py.init()
+
+hauteur = 500
+largeur = 500
+scale = 1e9
+
+blanc = (255, 255, 255)
+gris = (170, 170, 170)
+noir = (0, 0, 0)
+rouge = (255, 0, 0)
+jaune = (255, 255, 0)
+jaune_orangée = (255, 190, 0)
+bleu = (0, 0, 255)
+
+
+
+screen = py.display.set_mode((largeur, hauteur))
+py.display.set_caption("simulation système")
+
+#donnée 
+
+G = 6.67e-11
+
+MS = 2e30
+MT = 6e24
+Mm = 6.4e23
+Mv = 4.9e24
+Mme = 3.3e23
+
+d_TS = 1.5e11
+d_mS = 2.2e11
+d_vS = 1.1e11
+d_meS = 7e10
+
+#conditions initiales
+
+Ox = largeur / 2
+Oy = hauteur / 2
+
+xS0, yS0 = 0, 0
+vxS0, vyS0 = 0, 0
+
+xT0, yT0 = d_TS, 0
+vxT0, vyT0 = 0, 29780
+
+xm0, ym0 = d_mS, 0
+vxm0, vym0 = 0, 24130
+
+xv0, yv0 = d_vS, 0
+vxv0, vyv0 = 0, 35000
+
+xme0, yme0 = d_meS, 0
+vxme0, vyme0 = 0, 38860
+
+#defition temps
+
+dt = 60 * 60 * 3.6
+t_max = 365 * 24 * 60 * 60 * 30
+n_steps = int(t_max / dt)
+
+#definition des variables
+
+xS, yS = xS0, yS0
+xT, yT = xT0, yT0
+xm, ym = xm0, ym0
+xv, yv = xv0, yv0
+xme, yme = xme0, yme0
+
+vxS, vyS = vxS0, vyS0
+vxT, vyT = vxT0, vyT0
+vxm, vym = vxm0, vym0
+vxv, vyv = vxv0, vyv0
+vxme, vyme = vxme0, vyme0
+
+#vecteur positions
+
+OS = []
+OT = []
+Om = []
+Ov = []
+Ome = []
+
+for i in range(n_steps):
+    #info ST
+    dx_ST, dy_ST = (xT - xS), (yT - yS)
+    r_ST = np.sqrt(dx_ST**2 + dy_ST**2)
+    phi_ST = np.arctan2(dy_ST, dx_ST)
+    phi_TS = phi_ST + np.pi
+
+    #info Sm
+    dx_Sm, dy_Sm = (xm - xS), (ym - yS)
+    r_Sm = np.sqrt(dx_Sm**2 + dy_Sm**2)
+    phi_Sm = np.arctan2(dy_Sm, dx_Sm)
+    phi_mS = phi_Sm + np.pi
+
+    #info Sv
+    dx_Sv, dy_Sv = (xv - xS), (yv - yS)
+    r_Sv = np.sqrt(dx_Sv**2 + dy_Sv**2)
+    phi_Sv = np.arctan2(dy_Sv, dx_Sv)
+    phi_vS = phi_Sv + np.pi
+
+    #info Sme
+    dx_Sme, dy_Sme = (xme - xS), (yme - yS)
+    r_Sme = np.sqrt(dx_Sme**2 + dy_Sme**2)
+    phi_Sme = np.arctan2(dy_Sme, dx_Sme)
+    phi_meS = phi_Sme + np.pi
+    
+
+    #info mT
+    dx_mT, dy_mT = (xT - xm), (yT - ym)
+    r_mT = np.sqrt(dx_mT**2 + dy_mT**2)
+    phi_mT = np.arctan2(dy_mT, dx_mT)
+    phi_Tm = phi_mT + np.pi
+
+    #info vm
+    dx_vm, dy_vm = (xm - xv), (ym - yv)
+    r_vm = np.sqrt(dx_vm**2 + dy_vm**2)
+    phi_vm = np.arctan2(dy_vm, dx_vm)
+    phi_mv = phi_vm + np.pi
+
+    #info vT
+    dx_vT, dy_vT = (xT - xv), (yT - yv)
+    r_vT = np.sqrt(dx_vT**2 + dy_vT**2)
+    phi_vT = np.arctan2(dy_vT, dx_vT)
+    phi_Tv = phi_vT + np.pi
+
+    #info mev
+    dx_mev, dy_mev = (xv - xme), (yv - yme)
+    r_mev = np.sqrt(dx_mev**2 + dy_mev**2)
+    phi_mev = np.arctan2(dy_mev, dx_mev)
+    phi_vme = phi_mev + np.pi
+    
+    #info meT
+    dx_meT, dy_meT = (xT - xme), (yT - yme)
+    r_meT = np.sqrt(dx_meT**2 + dy_meT**2)
+    phi_meT = np.arctan2(dy_meT, dx_meT)
+    phi_Tme = phi_meT + np.pi
+
+    #info mem
+    dx_mem, dy_mem = (xm - xme), (ym - yme)
+    r_mem = np.sqrt(dx_mem**2 + dy_mem**2)
+    phi_mem = np.arctan2(dy_mem, dx_mem)
+    phi_mme = phi_mem + np.pi
+    
+
+
+    
+
+    #equation mouvement Soleil
+
+    axS = (-G * MT / r_ST**2) * np.cos(phi_TS) 
+    + (-G * Mm / r_Sm**2) * np.cos(phi_mS) 
+    + (-G * Mv / r_Sv**2) * np.cos(phi_vS)
+    + (-G * Mme / r_Sme**2) * np.cos(phi_meS)
+    
+    ayS = (-G * MT / r_ST**2) * np.sin(phi_TS) 
+    + (-G * Mm / r_mT**2) * np.sin(phi_mS)
+    + (-G * Mv / r_Sv**2) * np.sin(phi_vS)
+    + (-G * Mme / r_Sme**2) * np.sin(phi_meS)
+    
+
+    vxS += axS * dt
+    vyS += ayS * dt
+
+    xS += vxS * dt
+    yS += vyS * dt
+    
+    #equation mouvement Terre
+    
+    axT = (-G * MS / r_ST**2) * np.cos(phi_ST) 
+    + (-G * Mm / r_mT**2) * np.cos(phi_mT)
+    + (-G * Mv / r_vT**2) * np.cos(phi_vT)
+    + (-G * Mme / r_meT**2) * np.cos(phi_meT)
+    
+    ayT = (-G * MS / r_ST**2) * np.sin(phi_ST) 
+    + (-G * Mm / r_mT**2) * np.sin(phi_mT)
+    + (-G * Mv / r_vT**2) * np.sin(phi_vT)
+    + (-G * Mme / r_meT**2) * np.sin(phi_meT)
+
+    vxT += axT * dt
+    vyT += ayT * dt
+
+    xT += vxT * dt
+    yT += vyT * dt
+
+    #equation mouvement Mars
+    
+    axm = (-G * MS / r_Sm**2) * np.cos(phi_Sm) 
+    + (-G * MT / r_mT**2) * np.cos(phi_Tm)
+    + (-G * Mv / r_vm**2) * np.cos(phi_vm)
+    + (-G * Mme / r_mem**2) * np.cos(phi_mem)
+    
+    aym = (-G * MS / r_Sm**2) * np.sin(phi_Sm) 
+    + (-G * Mm / r_mT**2) * np.sin(phi_Tm)
+    + (-G * Mv / r_vm**2) * np.sin(phi_vm)
+    + (-G * Mme / r_mem**2) * np.sin(phi_mem)
+
+    vxm += axm * dt
+    vym += aym * dt
+
+    xm += vxm * dt
+    ym += vym * dt
+
+    #equation du mouvement venus
+
+    axv = (-G * MS / r_Sv**2) * np.cos(phi_Sv) 
+    + (-G * MT / r_vT**2) * np.cos(phi_Tv)
+    + (-G * Mm / r_vm**2) * np.cos(phi_mv)
+    + (-G * Mme / r_mev**2) * np.cos(phi_mev)
+    
+    ayv = (-G * MS / r_Sv**2) * np.sin(phi_Sv) 
+    + (-G * MT / r_vT**2) * np.sin(phi_Tv)
+    + (-G * Mm / r_vm**2) * np.sin(phi_mv)
+    + (-G * Mme / r_mev**2) * np.sin(phi_mev)
+
+
+    vxv += axv * dt
+    vyv += ayv * dt
+
+    xv += vxv * dt
+    yv += vyv * dt
+
+    #equation du mouvement mercure
+
+    axme = (-G * MS / r_Sme**2) * np.cos(phi_Sme) 
+    + (-G * MT / r_meT**2) * np.cos(phi_Tme)
+    + (-G * Mv / r_mev**2) * np.cos(phi_vme)
+    + (-G * Mme / r_mem**2) * np.cos(phi_mem)
+
+    ayme = (-G * MS / r_Sme**2) * np.sin(phi_Sme) 
+    + (-G * MT / r_meT**2) * np.sin(phi_Tme)
+    + (-G * Mv / r_mev**2) * np.sin(phi_vme)
+    + (-G * Mme / r_mem**2) * np.sin(phi_mem)
+
+    vxme += axme * dt
+    vyme += ayme * dt
+
+    xme += vxme * dt
+    yme += vyme * dt
+
+    
+    OS_e = (Ox + xS / scale, Oy - yS / scale)
+    OT_e = (Ox + xT / scale, Oy - yT / scale)
+    Om_e = (Ox + xm / scale, Oy - ym / scale)
+    Ov_e = (Ox + xv / scale, Oy - yv / scale)
+    Ome_e = (Ox + xme / scale, Oy - yme / scale)
+
+    OS.append(OS_e)
+    OT.append(OT_e)
+    Om.append(Om_e)
+    Ov.append(Ov_e)
+    Ome.append(Ome_e)
+
+#affichage pygame
+current_frame = 0
+
+running = True
+clock = py.time.Clock()
+
+while running:
+    for event in py.event.get():
+        if event.type == py.QUIT:
+            running = False
+
+    screen.fill(noir)
+    #Dessin Soleil
+    if 0 <= current_frame < len(OS):
+            py.draw.circle(screen, jaune, (int(OS[current_frame][0]),
+    int(OS[current_frame][1])), 10)
+    #Dessin Terre
+    if 0 <= current_frame < len(OT):
+        py.draw.circle(screen, bleu, (int(OT[current_frame][0]),
+int(OT[current_frame][1])), 4.6)
+    #Dessin Mars
+    if 0 <= current_frame < len(Om) :
+        py.draw.circle(screen, rouge, (int(Om[current_frame][0]),
+int(Om[current_frame][1])), 3.5)
+    #Dessin Venus
+    if 0 <= current_frame < len(Ov) :
+            py.draw.circle(screen, jaune_orangée, (int(Ov[current_frame][0]),
+    int(Ov[current_frame][1])), 4.4)
+    #Dessin mercure
+    if 0 <= current_frame < len(Ome) :
+            py.draw.circle(screen, gris, (int(Ome[current_frame][0]),
+    int(Ome[current_frame][1])), 2.5)
+    
+    py.display.flip()
+
+    current_frame = (current_frame + 1) % len(Om)
+    clock.tick(1500)  #FPS
+
+py.quit()
+
